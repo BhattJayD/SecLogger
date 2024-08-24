@@ -1,31 +1,47 @@
-const mariadb = require('mariadb');
-require('dotenv').config();
-// Create a pool of connections to the MariaDB database
-const pool = mariadb.createPool({
-    host: process.env.DB_HOST,
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    connectionLimit: process.env.DB_CONNECTION_LIMIT,
-    acquireTimeout: process.env.DB_ACQUIRE_TIMEOUT,
+var mysql = require("mysql2");
+require("dotenv").config();
+
+var con = mysql.createConnection({
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 });
 const insertLog = async (log) => {
-    let conn;
-    try {
-        conn = await pool.getConnection();
-        const rows = await conn.query("SELECT * from logs");
-        // const query = `
-        //     INSERT INTO logs (req)
-        //     VALUES (?)
-        // `;
-        console.log(rows, 'rows');
+  // Connect to the database
+  con.connect(function (err) {
+    if (err) throw err;
+    console.log("Connected!");
+  });
 
-        // await conn.query(query,log);
-    } catch (err) {
-        console.error('Error inserting log:', err);
-    } finally {
-        if (conn) conn.end();
+  // Define the SQL query with a placeholder for parameters
+  const sql = "INSERT INTO logs (req) VALUES (?)";
+
+  // Use the query method with parameters
+  con.query(sql, [log], (err, results) => {
+    if (err) {
+      console.error(err);
+    } else {
+      console.log(results);
     }
+  });
 };
 
-module.exports = { insertLog };
+const getAllLogs = async () => {
+  return new Promise((resolve, reject) => {
+    con.connect(function (err) {
+      if (err) reject(err);
+      console.log("Connected!");
+    });
+    con.execute("SELECT * FROM logs", (err, results) => {
+      if (err) {
+        console.error(err);
+        reject(err);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+};
+
+module.exports = { insertLog, getAllLogs };
