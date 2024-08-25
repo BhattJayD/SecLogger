@@ -1,6 +1,7 @@
 const express = require("express");
 
 const { insertLog, getAllLogs } = require("./db");
+const { sendMessage } = require("./sendMessage");
 
 const app = express();
 const port = 4000;
@@ -24,6 +25,11 @@ const bruteForceLimiter = rateLimit({
     bruteForceCount += 1; // Increment brute-force attempt count
     console.warn(`Brute-force threshold exceeded from IP: ${req.ip}`);
     console.log("Brute-force Attempt Count:", bruteForceCount);
+    sendMessage(
+      `Brute-force Attempt\n \n  ${JSON.stringify(
+        req.body
+      )} \n \n Count ${bruteForceCount}`
+    );
     res.status(options.statusCode).send(options.message);
   },
 });
@@ -55,20 +61,24 @@ app.post("/log", async (req, res) => {
 
       for (const key of keys) {
         if (pattern.test(req.body.message.body[key])) {
-          if (!sqlInjectionDetected) {
+          if (!sqlInjectionDetected)
             console.warn(
               "Potential SQL injection detected:",
               req.body.message.body[key]
             );
-            SQLI += 1;
-            console.log("SQL Injection Count:", SQLI);
-            sqlInjectionDetected = true; // Set flag to true to stop further checks
-          }
+          SQLI += 1;
+          console.log("SQL Injection Count:", SQLI);
+          sqlInjectionDetected = true; // Set flag to true to stop further checks
         }
       }
 
       if (sqlInjectionDetected) {
         // If SQL injection was detected, respond with an error and exit
+        sendMessage(
+          `Sql Injection detected \n \n ${JSON.stringify(
+            req.body
+          )} \n \n  Count ${SQLI}`
+        );
         return res
           .status(400)
           .send("Bad Request: SQL injection attempt detected.");
@@ -95,6 +105,9 @@ app.post("/log", async (req, res) => {
 
       if (xssDetected) {
         // If XSS was detected, respond with an error and exit
+        sendMessage(
+          `XXS detected \n \n ${JSON.stringify(req.body)} \n \n  count ${XSS}}`
+        );
         return res.status(400).send("Bad Request: XSS attempt detected.");
       }
     }
