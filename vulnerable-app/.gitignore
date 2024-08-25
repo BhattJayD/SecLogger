@@ -43,14 +43,14 @@ dist/
 
 # Gatsby files
 .cache/
-public/
+#public/
 
 # Gridsome files
 .cache/
 dist/
 
 # Hexo files
-public/
+#public/
 
 # Bower dependency directory
 bower_components/
